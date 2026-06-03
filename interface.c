@@ -37,6 +37,12 @@ void mostrarHUD(Player *p, Zombie *z, int wave) {
     printf("              WAVE %d              \n", wave);
     printf("===================================\n");
     
+    // Alerta Fixo no Topo se o pente estiver zerado
+    if (p->balas == 0) {
+        printf(" [!] SEM BALAS! VOCE PRECISA RECARREGAR [!]\n");
+        printf("-----------------------------------\n");
+    }
+    
     printf("Player HP:   ");
     mostrarBarra(p->hp, p->hpMax);
     printf("Balas: %d/%d\n", p->balas, p->balasMax);
@@ -44,14 +50,14 @@ void mostrarHUD(Player *p, Zombie *z, int wave) {
     printf("-----------------------------------\n");
     
     if (z != NULL) {
-        printf("Zombie Atual: %s\n", z->nome);
+        printf("Zombie Actual: %s\n", z->nome);
         printf("Zombie HP:   ");
         mostrarBarra(z->hp, z->hpMax);
     }
     printf("-----------------------------------\n");
     printf("1 - Atacar\n");
     printf("2 - Recarregar\n");
-    printf("3 - Fugir/Status\n");
+    printf("3 - Fugir/Recuar\n");
     printf("Escolha: ");
 }
 
@@ -66,9 +72,13 @@ void mostrarGameOver(int kills) {
     printf("===================================\n");
     printf("             GAME OVER             \n");
     printf("===================================\n");
-    printf("Voce sobreviveu ate onde deu!\n");
-    printf("Total de Zumbis Mortos: %d\n", kills);
+    printf(" Voce sobreviveu ate onde deu!\n");
+    printf(" Total de Zumbis Mortos: %d\n", kills);
     printf("===================================\n");
+    printf("\nDeseja jogar novamente?\n");
+    printf("1 - Sim, quero revanche!\n");
+    printf("0 - Nao, sair do jogo\n");
+    printf("Escolha: ");
 }
 
 void mostrarAnimacao(char *texto) {
