@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Survival Engine - Painel Tático e de Apresentação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #070709;
+            --bg-sidebar: #020203;
+            --bg-card: #0d0d11;
+            --bg-code: #030305;
+            --border-color: #1e1e24;
+            --accent-neon: #deff9a;
+            --accent-green: #8bc34a;
+            --accent-walker: #a78bfa;
+            --accent-runner: #f43f5e;
+            --accent-tank: #eab308;
+            --text-main: #f1f5f9;
+            --text-muted: #4e5d70;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR - ÁRVORE DE DIRETÓRIOS */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 25px 15px;
+            flex-shrink: 0;
+        }
+
+        .project-title { font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fff; }
+        .project-title span { color: var(--accent-neon); }
+        .project-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 30px; text-transform: uppercase; }
+
+        .file-tree-title { font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
+        .file-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .file-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .file-item:hover { background-color: rgba(222, 255, 154, 0.02); color: #fff; }
+        .file-item.active {
+            background-color: rgba(222, 255, 154, 0.05);
+            border-color: rgba(222, 255, 154, 0.15);
+            color: var(--accent-neon);
+            font-weight: 700;
+        }
+        .file-item i { font-size: 14px; width: 16px; text-align: center; }
+        .file-item .fa-c { color: #3b82f6; }
+        .file-item .fa-h { color: #a855f7; }
+        .file-item .fa-markdown { color: #f97316; }
+        .file-item .fa-chalkboard-user { color: var(--accent-neon); }
+
+        .team-footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+        /* VIEW CONTAINER SYSTEM */
+        .workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* VIEW 1: INTERACTIVE GAME GRID */
+        .game-view {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 1.2fr 1fr 1.1fr;
+            gap: 25px;
+            padding: 35px;
+            height: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sim-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .sim-card h4 { font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; position: absolute; top: 15px; left: 25px; display: flex; align-items: center; gap: 8px; }
+        
+        /* STATUS EMPILHADO E LARGO */
+        .player-dashboard { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; width: 100%; }
+        .stat-unit { display: flex; flex-direction: column; justify-content: center; width: 100%; }
+        .stat-header { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 14px; margin-bottom: 6px; font-weight: 500; }
+        .stat-bar-bg { width: 100%; height: 14px; background-color: #050507; border-radius: 7px; overflow: hidden; border: 1px solid #1c1c24; }
+        .stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-neon)); transition: width 0.3s ease; }
+
+        /* PISTA DE DISTÂNCIAS EXPANDIDA (0 A 8 CASAS) */
+        .track-lanes { display: flex; width: 100%; justify-content: space-between; position: relative; background: #040406; padding: 12px; border-radius: 10px; border: 1px solid #1c1c24; margin-top: 20px; gap: 8px; }
+        .track-node { flex: 1; height: 70px; border-radius: 8px; background: #0d0d11; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-muted); font-weight: 700; position: relative; }
+        .track-node span { font-size: 9px; text-transform: uppercase; margin-top: 4px; font-weight: 500; }
+        
+        .entity-avatar { position: absolute; font-size: 24px; top: 50%; transform: translateY(-50%); z-index: 5; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 8px 16px rgba(0,0,0,0.6); transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); }
+        .player-avatar { left: 24px; color: #fff; background-color: #2563eb; border: 2.5px solid #60a5fa; }
+        .zombie-avatar { color: #fff; background-color: #7c2d12; border: 2.5px solid var(--accent-runner); }
+
+        /* BOTÕES INFERIORES EXPANDIDOS */
+        .sim-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 15px; }
+        .sim-btn { background: #16161c; border: 1px solid var(--border-color); color: #f1f5f9; padding: 22px; border-radius: 10px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.15s ease; letter-spacing: 0.5px; }
+        .sim-btn:hover { background: var(--accent-neon); color: #000; border-color: var(--accent-neon); transform: translateY(-2px); }
+        .sim-btn span { font-size: 11px; opacity: 0.6; font-weight: 500; }
+
+        /* VIEW 2: SPLIT CODE INSPECTOR */
+        .code-view {
+            width: 0px; 
+            background-color: var(--bg-code);
+            border-left: 0px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100%;
+        }
+        .code-view.open {
+            width: 850px;
+            padding: 35px;
+            border-left: 1px solid var(--border-color);
+        }
+        .inspector-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .current-file-title { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+        .close-inspector-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; transition: color 0.2s; }
+        .close-inspector-btn:hover { color: #f43f5e; }
+
+        .code-scroller { flex: 1; overflow-y: auto; background-color: #010102; border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; box-shadow: inset 0 4px 20px rgba(0,0,0,0.8); }
+        code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.6; color: #94a680; display: block; white-space: pre; }
+
+        /* VIEW 3: FULL SCREEN SLIDES CONTAINER */
+        .slides-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 100;
+            display: none; 
+            flex-direction: column;
+            padding: 50px 80px;
+            overflow-y: auto;
+        }
+        .slide-deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #1a1a24; padding-bottom: 15px; }
+        .slide-frame { background: #050508; border: 1px solid #151520; border-radius: 12px; padding: 40px; margin-bottom: 40px; min-height: 700px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .slide-frame h2 { color: var(--accent-neon); font-size: 32px; margin-bottom: 20px; text-transform: uppercase; }
+
+        /* Syntax Highlight Code Tokens */
+        .c-keyword { color: #f472b6; font-weight: 600; }
+        .c-type { color: #c084fc; font-weight: 500; }
+        .c-comment { color: #475569; font-style: italic; display: inline-block; width: 100%; margin: 2px 0; }
+        .c-string { color: #34d399; }
+        .c-macro { color: #fb923c; }
+        .c-number { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="project-title"><span>Zombie</span> Survival</div>
+        <div class="project-subtitle">Auditoria de Estrutura de Dados II</div>
+        
+        <div class="file-tree-title" style="margin-top: 10px; color: var(--accent-green);">Apresentação Técnica</div>
+        <ul class="file-list" style="margin-bottom: 25px;">
+            <li class="file-item" onclick="openSlidesView(this)"><i class="fa-solid fa-chalkboard-user"></i>Apresentação (Slides)</li>
+        </ul>
+
+        <div class="file-tree-title">Módulos do Sistema (C)</div>
+        <ul class="file-list">
+            <li class="file-item" onclick="openCodeInspector('main_c', this)"><i class="fa-solid fa-c"></i>main.c</li>
+            <li class="file-item" onclick="openCodeInspector('game_c', this)"><i class="fa-solid fa-c"></i>game.c</li>
+            <li class="file-item" onclick="openCodeInspector('game_h', this)"><i class="fa-solid fa-h"></i>game.h</li>
+            <li class="file-item" onclick="openCodeInspector('zombie_c', this)"><i class="fa-solid fa-c"></i>zombie.c</li>
+            <li class="file-item" onclick="openCodeInspector('zombie_h', this)"><i class="fa-solid fa-h"></i>zombie.h</li>
+            <li class="file-item" onclick="openCodeInspector('player_c', this)"><i class="fa-solid fa-c"></i>player.c</li>
+            <li class="file-item" onclick="openCodeInspector('player_h', this)"><i class="fa-solid fa-h"></i>player.h</li>
+            <li class="file-item" onclick="openCodeInspector('interface_c', this)"><i class="fa-solid fa-c"></i>interface.c</li>
+            <li class="file-item" onclick="openCodeInspector('interface_h', this)"><i class="fa-solid fa-h"></i>interface.h</li>
+            <li class="file-item" onclick="openCodeInspector('readme_md', this)"><i class="fa-brands fa-markdown"></i>README.md</li>
+        </ul>
+
+        <div class="team-footer">
+            <strong>FUMEC — 2026</strong><br>
+            Jonathan • Moisés<br>João • Miguel
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <div class="game-view" id="game-viewport">
+            
+            <div class="sim-card">
+                <h4><i class="fa-solid fa-user" style="color:#60a5fa;"></i> Instância das Estruturas do Jogador (Stack)</h4>
+                <div class="player-dashboard">
+                    <div class="stat-unit">
+                        <div class="stat-header"><span>HP Vital do Personagem:</span><span id="p-hp-text">100/100</span></div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" id="p-hp-bar" style="width: 100%;"></div></div>
+                    </div>
+                    <div class="stat-unit">
+                        <div class="stat-header"><span>Munição do Carregador (Pente):</span><span id="p-balas-text">6/6</span></div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" id="p-balas-bar" style="width: 100%; background: #2563eb;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sim-card" style="background-color: #040406;" id="track-container-box">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom: 5px;">
+                    <h4><i class="fa-solid fa-map-location-dot" style="color:var(--accent-neon);"></i> Vetor Linear de Distâncias Virtuais Relativas (Mapeamento de Horda)</h4>
+                    <span id="wave-badge" class="complexity-badge">Wave 1</span>
+                </div>
+                <div class="track-container">
+                    <div class="track-lanes" id="track-lanes-element">
+                        <div class="track-node" id="lane-0" style="border-color:#991b1b;">0<span style="color:#ef4444; font-weight:700;">DANO</span></div>
+                        <div class="track-node" id="lane-1">1<span>-</span></div>
+                        <div class="track-node" id="lane-2">2<span>-</span></div>
+                        <div class="track-node" id="lane-3">3<span>-</span></div>
+                        <div class="track-node" id="lane-4" style="border-color:#166534;">4<span style="color:var(--accent-green); font-weight:700;">SPAWN</span></div>
+                        <div class="track-node" id="lane-5">5<span>-</span></div>
+                        <div class="track-node" id="lane-6">6<span>-</span></div>
+                        <div class="track-node" id="lane-7">7<span>-</span></div>
+                        <div class="track-node" id="lane-8" style="border-color:var(--text-muted);">8<span>RECUO</span></div>
+                        
+                        <div class="entity-avatar player-avatar" id="player-ico"><i class="fa-solid fa-crosshairs"></i></div>
+                        <div class="entity-avatar zombie-avatar" id="zombie-ico"><i class="fa-solid fa-skull"></i></div>
+                    </div>
+                </div>
+                <div class="stat-row" style="margin-top: 15px; font-family:'JetBrains Mono', monospace;"><span id="zombie-info-text" style="color:#94a3b8;">Monitoramento: WALKER (HP: 30/30)</span><span style="color:var(--text-muted);">Zumbis Eliminados da Fila: <span id="p-kills" style="color:#fff; font-weight:700;">0</span></span></div>
+            </div>
+
+            <div class="sim-card">
+                <h4><i class="fa-solid fa-terminal" style="color:var(--accent-green);"></i> Entrada do Operador do Console (Game Loop State)</h4>
+                <div class="sim-actions">
+                    <button class="sim-btn" onclick="triggerTurn(1)"><i class="fa-solid fa-crosshairs" style="color:#ef4444; font-size:22px;"></i>Atacar Armamento<span>Instrução Opção 1</span></button>
+                    <button class="sim-btn" onclick="triggerTurn(2)"><i class="fa-solid fa-arrows-rotate" style="color:#3b82f6; font-size:22px;"></i>Recarregar Cartucho<span>Instrução Opção 2</span></button>
+                    <button class="sim-btn" onclick="triggerTurn(3)"><i class="fa-solid fa-person-running" style="color:var(--accent-tank); font-size:22px;"></i>Fugir / Recuar Espaço<span>Instrução Opção 3</span></button>
+                </div>
+                <div id="sim-log" style="font-size:13px; font-family:'JetBrains Mono', monospace; color:var(--accent-neon); text-align:center; margin-top:15px; font-weight:500;">Aguardando despacho de instrução do laço de turnos...</div>
+            </div>
+
+        </div>
+
+        <div class="code-view" id="code-inspector-panel">
+            <div class="inspector-header">
+                <div class="current-file-title" id="file-title-display"><i class="fa-solid fa-c"></i> main.c</div>
+                <div class="complexity-badge" id="file-badge">Ponto de Entrada Inicial</div>
+                <button class="close-inspector-btn" onclick="closeCodeInspector()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="code-scroller">
+                <pre><code id="code-box">Carregando buffers...</code></pre>
+            </div>
+        </div>
+
+        <div class="slides-view" id="slides-deck-panel">
+            <div class="slide-deck-header">
+                <h1 style="font-size: 28px;">Painel de Apresentação Acadêmica Expandido — <span>ED2</span></h1>
+                <button class="sim-btn" style="padding: 8px 16px; flex-direction:row; gap:8px; font-size:13px;" onclick="closeSlidesView()"><i class="fa-solid fa-gamepad"></i> Voltar ao Simulador</button>
+            </div>
+
+            <div class="slide-frame" style="text-align: center;">
+                <h1 style="font-size: 52px; margin-bottom: 15px;"><span>Zombie</span> Survival</h1>
+                <p style="font-size: 18px; color: var(--accent-green); margin-bottom: 30px;">Autópsia de Código e Engenharia Reversa Integral em C</p>
+                <p style="max-width: 800px; margin: 0 auto 40px auto; font-size:15px; color: #94a3b8; line-height: 1.6;">
+                    Análise microscópica orientada ao controle de estruturas dinâmicas encadeadas, alocação sob demanda no Heap operacional, mitigação assintótica de vazamentos e sincronização de loops de estados finitos.
+                </p>
+                <div style="font-size: 13px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px;">Universidade FUMEC • Ciência da Computação • 2026</div>
+            </div>
+
+            <div class="slide-frame">
+                <h2>1. Topologia de Pastas e Desacoplamento Arquitetural</h2>
+                <p style="margin-bottom: 20px; font-size: 15px;">O ecossistema foi modularizado de forma estrita sob o princípio de <strong>loose coupling</strong> (acoplamento fraco), isolando assinaturas de contratos lógicos de suas implementações:</p>
+                <code style="background:#000; padding:15px; border-radius:6px; margin-bottom:20px; font-size:13px; display:block; border: 1px solid var(--border-color);">
+• main.c       -> Ponto de entrada limpo (Bootstrap de inicialização da pilha).
+• game.c/h     -> Core Engine (Laços aninhados orquestradores da regra de negócio tática).
+• zombie.c/h   -> Camada de Dados (Engenharia da Fila Dinâmica Encadeada e gerência do Heap).
+• player.c/h   -> Camada de Domínio (Estados escalares mutáveis da entidade sobrevivente).
+• interface.c/h-> Viewport Interface (Abstração de diretivas cross-platform e I/O).
+                </code>
+                <p style="font-size: 14px; color: #94a3b8;">
+                    <strong>Destaque Técnico:</strong> O isolamento estrito via arquivos de cabeçalho (<code>.h</code>) mitigou a ocorrência de conflitos de merge no Git, assegurando o desenvolvimento paralelo.
+                </p>
+            </div>
+
+            <div class="slide-frame">
+                <h2>2. O Nó Dinâmico – Dissecação da struct Zombie</h2>
+                <p style="margin-bottom: 15px;">Cada zumbi instanciado na memória RAM funciona como um nó isolado e assíncrono. A tipagem em baixo nível se comporta da seguinte forma:</p>
+                <code style="background:#000; padding:20px; border-radius:6px; font-size:13px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">typedef struct</span> Zombie {
+    <span class="c-keyword">char</span> nome[<span class="c-number">30</span>];       <span class="c-comment">// Linha 2: Alocação estática interna de 30 bytes contíguos para strings</span>
+    <span class="c-keyword">int</span> hp;              <span class="c-comment">// Linha 3: 4 bytes escalares para a vida corrente</span>
+    <span class="c-keyword">int</span> hpMax;           <span class="c-comment">// Linha 4: 4 bytes para teto de normalização visual</span>
+    <span class="c-keyword">int</span> dano;            <span class="c-comment">// Linha 5: 4 bytes para carga ofensiva aplicada na casa zero</span>
+    <span class="c-keyword">struct</span> Zombie *prox; // Linha 6: Ponteiro auto-referenciado de 8 bytes (Arquitetura x64)
+} Zombie;                // Linha 7: Instanciação do alias estruturado</code>
+                <p style="margin-top: 15px; font-size: 14px; color: #94a3b8;">
+                    <strong>Mecânica Microscópica:</strong> A linha 6 armazena o endereço binário do próximo bloco dinâmico alocado sob demanda no Heap, abolindo a rigidez dos vetores estáticos.
+                </p>
+            </div>
+
+            <div class="slide-frame">
+                <h2>3. Abstração de Fronteiras da Fila Dinâmica (FIFO)</h2>
+                <p style="margin-bottom: 20px;">A estrutura <code>Fila</code> encapsula as fronteiras lineares utilizando o paradigma <strong>First In, First Out (FIFO)</strong>.</p>
+                <code style="background:#000; padding:15px; border-radius:6px; font-size:13px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">typedef struct</span> { Zombie *inicio; Zombie *fim; } Fila;</code>
+                <p style="font-size: 14.5px; margin-bottom: 12px;"><i class="fa-solid fa-bolt" style="color:var(--accent-neon)"></i> <strong>Remoção no Início em $\mathcal{O}(1)$:</strong> O consumo do zumbi ativo ocorre instantaneamente movendo a cabeça da fila, sem deslocar índices físicos.</p>
+                <p style="font-size: 14.5px; margin-bottom: 20px;"><i class="fa-solid fa-bolt" style="color:var(--accent-neon)"></i> <strong>Inserção na Cauda em $\mathcal{O}(1)$:</strong> A manutenção do ponteiro <code>fim</code> elimina a varredura linear do Heap a cada spawn.</p>
+            </div>
+
+            <div class="slide-frame">
+                <h2>4. Alocação em Runtime Dinâmico (enqueueZombie)</h2>
+                <p style="margin-bottom: 15px;">A inserção de um nó de zumbi realiza uma chamada de sistema microscópica direto na RAM:</p>
+                <code style="background:#000; padding:15px; border-radius:6px; font-size:12.5px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">void</span> enqueueZombie(Fila *f, <span class="c-keyword">char</span> *nome, <span class="c-keyword">int</span> hp, <span class="c-keyword">int</span> dano) {
+    Zombie *novo = (Zombie*) <span class="c-keyword">malloc</span>(<span class="c-keyword">sizeof</span>(Zombie)); <span class="c-comment">// L2: Aloca espaço físico no Heap</span>
+    <span class="c-keyword">if</span> (novo == NULL) <span class="c-keyword">return</span>;                         <span class="c-comment">// L3: Proteção preventiva contra Out-of-Memory</span>
+    <span class="c-keyword">strcpy</span>(novo->nome, nome);                         <span class="c-comment">// L4: Deep copy literal dos caracteres</span>
+    novo->hp = hp; novo->hpMax = hp; novo->dano = dano; novo->prox = NULL;
+    <span class="c-keyword">if</span> (f->inicio == NULL) { f->inicio = novo; f->fim = novo; }
+    <span class="c-keyword">else</span> { f->fim->prox = novo; f->fim = novo; }       <span class="c-comment">// L8: Vinculação do ponteiro e avanço da cauda</span>
+}</code>
+            </div>
+
+            <div class="slide-frame">
+                <h2>5. Coleta de Lixo Manual Preventiva (dequeueZombie)</h2>
+                <p style="margin-bottom: 15px; color:#ef4444; font-size: 15px; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> O Perigo do Nó Fantasma (Memory Leak):</p>
+                <p style="margin-bottom: 15px; font-size: 14.5px;">Se avançássemos o ponteiro de cabeçalho diretamente sem resguardar o endereço corrente, o bloco de dados do zumbi morto ficaria isolado no Heap, gerando vazamento crônico de RAM.</p>
+                <code style="background:#000; padding:15px; border-radius:6px; font-size:12.5px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">void</span> dequeueZombie(Fila *f) {
+    <span class="c-keyword">if</span> (f->inicio == NULL) <span class="c-keyword">return</span>;
+    Zombie *aux = f->inicio;     <span class="c-comment">// L3: Retém a referência física na Stack antes do avanço</span>
+    f->inicio = f->inicio->prox; <span class="c-comment">// L4: A cabeça assume o endereço apontado pelo campo prox</span>
+    <span class="c-keyword">if</span> (f->inicio == NULL) f->fim = NULL;
+    <span class="c-keyword">free</span>(aux);                   <span class="c-comment">// L6: Liberação física imediata dos bytes devolvidos ao SO</span>
+}</code>
+            </div>
+
+            <div class="slide-frame">
+                <h2>6. Inovação: Algoritmo de Waves Infinitas com Rotação Cíclica de 3 Estados</h2>
+                <p style="margin-bottom: 15px; font-size: 15px;">Para evitar a estagnação de dificuldade linear e abolir hordas homogêneas previsíveis, o motor lógico foi atualizado com um algoritmo baseado no **resto de divisão por módulo aritmético** (<code>i % 3</code>):</p>
+                <code style="background:#000; padding:15px; border-radius:6px; font-size:12.5px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">void</span> iniciarWave(Fila *f, <span class="c-keyword">int</span> wave) {
+    <span class="c-keyword">int</span> qtdZumbis = wave * <span class="c-number">2</span>; <span class="c-comment">// Escalabilidade geométrica infinita da horda</span>
+    <span class="c-keyword">for</span> (<span class="c-keyword">int</span> i = <span class="c-number">0</span>; i &lt; qtdZumbis; i++) {
+        <span class="c-keyword">if</span> (wave == <span class="c-number">1</span>) { enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>); }
+        <span class="c-keyword">else if</span> (wave == <span class="c-number">2</span>) {
+            <span class="c-keyword">if</span> (i % <span class="c-number">2</span> == <span class="c-number">0</span>) enqueueZombie(f, <span class="c-string">"RUNNER"</span>, <span class="c-number">40</span>, <span class="c-number">12</span>);
+            <span class="c-keyword">else</span> enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>);
+        } <span class="c-keyword">else</span> { <span class="c-comment">// CICLO INFINITO ROTATIVO ASSÍNCRONO</span>
+            <span class="c-keyword">if</span> (i % <span class="c-number">3</span> == <span class="c-number">0</span>)      enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>);   <span class="c-comment">// Passo linear padrão (Avanço 1)</span>
+            <span class="c-keyword">else if</span> (i % <span class="c-number">3</span> == <span class="c-number">1</span>) enqueueZombie(f, <span class="c-string">"RUNNER"</span>, <span class="c-number">40</span>, <span class="c-number">12</span>);  <span class="c-comment">// Passo dinâmico rápido (Avanço 2)</span>
+            <span class="c-keyword">else</span>                 enqueueZombie(f, <span class="c-string">"TANK"</span>, <span class="c-number">80</span>, <span class="c-number">20</span>);    <span class="c-comment">// Nó massivo (Obriga ciclo de recuo)</span>
+        }
+    }
+}</code>
+                <p style="font-size:14px; color:#94a3b8;">
+                    <strong>Mapeamento Tático:</strong> Ao entrelaçar nós adjacentes com pesos de HP discrepantes, o motor força uma quebra contínua na árvore de decisões do jogador. À medida que os zumbis são consumidos na cabeça (FIFO), a velocidade e a pressão sobre o pente mudam em runtime.
+                </p>
+            </div>
+
+            <div class="slide-frame">
+                <h2>7. Matriz de Decisão Espacial – Pista Expandida de 0 a 8 Casas</h2>
+                <p style="margin-bottom: 15px; font-size: 15px;">O combate deixa de ser uma mera subtração estática. O motor orquestra um **Vetor Virtual de Distância Linear Relativa**. O nascimento do zumbi ativa o spawn fixo em 4 casas. A partir daí, cada ação dita uma mutação no espaço:</p>
+                <ul style="padding-left: 20px; font-size: 14px; line-height: 1.8; margin-bottom: 20px;">
+                    <li><strong>Ação Atacar (Opção 1):</strong> Dispara munição, reduz HP e o zumbi avança sua taxa de passos corrente (1 ou 2).</li>
+                    <li><strong>Ação Recarregar (Opção 2):</strong> Sincroniza o pente (6/6). O turno do player é nulo e o inimigo avança livremente encurtando a horda.</li>
+                    <li><strong>Ação Fugir / Recuar (Opção 3):</strong> Aplica um modificador incremental geométrico de <code>distancia += 2</code>.</li>
+                </ul>
+                <div style="background: rgba(244, 63, 94, 0.04); border: 1px solid rgba(244, 63, 94, 0.15); padding: 12px; border-radius: 6px; font-size: 13.5px; font-family: 'JetBrains Mono', monospace; color: #fda4af;">
+                    // REGRA DE COLISÃO BLOQUEADA CRÍTICA<br>
+                    if (distancia == 0) receberDano(&jogador, zumbiAtual->dano); // O nó só morde se atingir fisicamente o índice zero!
+                </div>
+            </div>
+
+            <div class="slide-frame" style="text-align: center;">
+                <h2 style="font-size: 38px;">Conclusão e Resultados de Engenharia</h2>
+                <hr style="border:none; height:1px; background:#1c1c24; margin: 25px 0;">
+                <p style="font-size: 15.5px; line-height: 1.7; max-width: 850px; margin: 0 auto 30px auto; color:#cbd5e1;">
+                    O desenvolvimento deste ecossistema comprovou de forma prática que o gerenciamento manual de estruturas dinâmicas em C confere um controle absoluto e de altíssima performance sobre o hardware. Consolidamos os conceitos assintóticos de Filas FIFO ($\mathcal{O}(1)$), desacoplamento arquitetural modular e gerência de memória RAM.
+                </p>
+                <p style="font-size: 14px; color: var(--accent-neon); font-weight: 700;">Agradecemos a atenção. Abrimos espaço para as arguições técnicas da banca examinadora.</p>
+                <p style="margin-top: 40px; font-size: 11px; color:var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Jonathan | Moisés | João | Miguel — FUMEC 2026</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // EXPANDED DATA DICTIONARY CONTAINING 100% VERBATIM SOURCE CODES FOR AUDIT
+        const filesData = {
+            main_c: {
+                title: "main.c",
+                badge: "Bootstrap de Ignição • Complexidade: O(1)",
+                code: `<span class="c-comment">// ============================================================================</span>
+<span class="c-comment">// ARQUIVO: main.c</span>
+<span class="c-comment">// AUTOR: Jonathan (Módulo Engine)</span>
+<span class="c-comment">// DESCRIÇÃO: Ponto de entrada exclusivo para inicialização do binário executável.</span>
+<span class="c-comment">// ============================================================================</span>
+
+<span class="c-macro">#include "game.h"</span> <span class="c-comment">// Vincula o contrato lógico do motor central de turnos</span>
+
+<span class="c-keyword">int</span> main() {
+    <span class="c-comment">// Transfere a totalidade do fluxo computacional ao laço aninhado principal</span>
+    loopJogo(); 
+    
+    <span class="c-keyword">return</span> <span class="c-number">0</span>; <span class="c-comment">// Código de encerramento devolvido de forma limpa ao SO</span>
+}`
+            },
+            game_h: {
+                title: "game.h",
+                badge: "Contrato de Assinaturas e Encapsulamento",
+                code: `<span class="c-comment">// ============================================================================</span>
+<span class="c-comment">// ARQUIVO: game.h</span>
+<span class="c-comment">// DESCRIÇÃO: Assinaturas globais estáveis que exportam as capacidades do motor.</span>
+<span class="c-comment">// ============================================================================</span>
+
+<span class="c-macro">#ifndef GAME_H</span>
+<span class="c-macro">#define GAME_H</span>
+
+<span class="c-macro">#include "zombie.h"</span> <span class="c-comment">// Dependência estrutural de nós para injeção de waves</span>
+
+<span class="c-keyword">void</span> iniciarWave(Fila *f, <span class="c-keyword">int</span> wave);
+<span class="c-keyword">void</span> loopJogo();
+
+<span class="c-macro">#endif</span>`
+            },
+            zombie_h: {
+                title: "zombie.h",
+                badge: "Modelagem de Tipos Abstratos Dinâmicos",
+                code: `<span class="c-comment">// ============================================================================</span>
+<span class="c-comment">// ARQUIVO: zombie.h</span>
+<span class="c-comment">// AUTOR: Moisés (Módulo de Dados)</span>
+<span class="c-comment">// DESCRIÇÃO: Definição estrutural de nós auto-referenciados para hordas no Heap.</span>
+<span class="c-comment">// ============================================================================</span>
+
+<span class="c-macro">#ifndef ZOMBIE_H</span>
+<span class="c-macro">#define ZOMBIE_H</span>
+
+<span class="c-keyword">typedef struct</span> Zombie {
+    <span class="c-keyword">char</span> nome[<span class="c-number">30</span>];       <span class="c-comment">// Vetor contíguo de 30 bytes para alocação de string de tipo</span>
+    <span class="c-keyword">int</span> hp;              <span class="c-comment">// 4 bytes - Capacidade vital corrente do nó</span>
+    <span class="c-keyword">int</span> hpMax;           <span class="c-comment">// 4 bytes - Teto fixado para renderização de proporção</span>
+    <span class="c-keyword">int</span> dano;            <span class="c-comment">// 4 bytes - Carga ofensiva aplicada na colisão virtual</span>
+    <span class="c-keyword">struct</span> Zombie *prox; <span class="c-comment">// Ponteiro de 8 bytes (x64) armazenando o endereço do sucessor</span>
+} Zombie;
+
+<span class="c-keyword">typedef struct</span> {
+    Zombie *inicio;      <span class="c-comment">// Cabeça da Fila (Remoção FIFO em O(1))</span>
+    Zombie *fim;         <span class="c-comment">// Cauda da Fila (Inserção direta em O(1))</span>
+} Fila;
+
+<span class="c-keyword">void</span> inicializarFila(Fila *f);
+<span class="c-keyword">int</span> filaVazia(Fila *f);
+<span class="c-keyword">void</span> enqueueZombie(Fila *f, <span class="c-keyword">char</span> *nome, <span class="c-keyword">int</span> hp, <span class="c-keyword">int</span> dano);
+<span class="c-keyword">void</span> dequeueZombie(Fila *f);
+
+<span class="c-macro">#endif</span>`
+            },
+            player_h: {
+                title: "player.h",
+                badge: "Contrato de Atributos do Agente do Operador",
+                code: `<span class="c-macro">#ifndef PLAYER_H</span>
+<span class="c-macro">#define PLAYER_H</span>
+
+<span class="c-macro">#include "zombie.h"</span>
+
+<span class="c-keyword">typedef struct</span> {
+    <span class="c-keyword">int</span> hp;
+    <span class="c-keyword">int</span> hpMax;
+    <span class="c-keyword">int</span> balas;
+    <span class="c-keyword">int</span> balasMax;
+    <span class="c-keyword">int</span> kills;
+    <span class="c-keyword">int</span> dano;
+} Player;
+
+<span class="c-keyword">void</span> inicializarPlayer(Player *p);
+<span class="c-keyword">void</span> atacarZombie(Player *p, Zombie *z);
+<span class="c-keyword">void</span> receberDano(Player *p, <span class="c-keyword">int</span> danoInimigo);
+<span class="c-keyword">void</span> recarregar(Player *p);
+
+<span class="c-macro">#endif</span>`
+            },
+            interface_h: {
+                title: "interface.h",
+                badge: "Contrato de Mapeamento do Console de Texto",
+                code: `<span class="c-macro">#ifndef INTERFACE_H</span>
+<span class="c-macro">#define INTERFACE_H</span>
+
+<span class="c-macro">#include "player.h"</span>
+<span class="c-macro">#include "zombie.h"</span>
+
+<span class="c-keyword">void</span> limparTerminal();
+<span class="c-keyword">void</span> mostrarBarra(<span class="c-keyword">int</span> atual, <span class="c-keyword">int</span> max);
+<span class="c-keyword">void</span> mostrarHUD(Player *p, Zombie *z, <span class="c-keyword">int</span> wave);
+<span class="c-keyword">int</span> obterEscolhaMenu();
+<span class="c-keyword">void</span> mostrarMenu();
+<span class="c-keyword">void</span> mostrarAnimacao(<span class="c-keyword">char</span> *msg);
+<span class="c-keyword">void</span> mostrarGameOver(<span class="c-keyword">int</span> kills);
+
+<span class="c-macro">#endif</span>`
+            },
+            zombie_c: {
+                title: "zombie.c",
+                badge: "Módulo de Engenharia e Controle do Heap RAM",
+                code: `<span class="c-macro">#include &lt;stdio.h&gt;</span>
+<span class="c-macro">#include &lt;stdlib.h&gt;</span>
+<span class="c-macro">#include &lt;string.h&gt;</span>
+<span class="c-macro">#include "zombie.h"</span>
+
+<span class="c-keyword">void</span> inicializarFila(Fila *f) {
+    f->inicio = NULL; f->fim = NULL;
+}
+
+<span class="c-keyword">int</span> filaVazia(Fila *f) {
+    <span class="c-keyword">return</span> f->inicio == NULL;
+}
+
+<span class="c-keyword">void</span> enqueueZombie(Fila *f, <span class="c-keyword">char</span> *nome, <span class="c-keyword">int</span> hp, <span class="c-keyword">int</span> dano) {
+    Zombie *novo = (Zombie*) <span class="c-keyword">malloc</span>(<span class="c-keyword">sizeof</span>(Zombie)); 
+    <span class="c-keyword">if</span> (novo == NULL) <span class="c-keyword">return</span>; 
+    <span class="c-keyword">strcpy</span>(novo->nome, nome); 
+    novo->hp = hp; novo->hpMax = hp; novo->dano = dano; novo->prox = NULL;
+    
+    <span class="c-keyword">if</span> (filaVazia(f)) { 
+        f->inicio = novo; f->fim = novo; 
+    } <span class="c-keyword">else</span> { 
+        f->fim->prox = novo; f->fim = novo; 
+    }
+}
+
+<span class="c-keyword">void</span> dequeueZombie(Fila *f) {
+    <span class="c-keyword">if</span> (filaVazia(f)) <span class="c-keyword">return</span>;
+    Zombie *aux = f->inicio;     
+    f->inicio = f->inicio->prox; 
+    <span class="c-keyword">if</span> (f->inicio == NULL) f->fim = NULL;
+    <span class="c-keyword">free</span>(aux); 
+}`
+            },
+            player_c: {
+                title: "player.c",
+                badge: "Operações Aritméticas e Modificadores por Ponteiros",
+                code: `<span class="c-macro">#include &lt;stdio.h&gt;</span>
+<span class="c-macro">#include "player.h"</span>
+
+<span class="c-keyword">void</span> inicializarPlayer(Player *p) {
+    p->hp = <span class="c-number">100</span>; p->hpMax = <span class="c-number">100</span>; p->balas = <span class="c-number">6</span>; p->balasMax = <span class="c-number">6</span>; p->kills = <span class="c-number">0</span>; p->dano = <span class="c-number">20</span>;
+}
+
+<span class="c-keyword">void</span> atacarZombie(Player *p, Zombie *z) {
+    <span class="c-keyword">if</span> (p->balas > <span class="c-number">0</span>) {
+        p->balas--; z->hp -= p->dano;
+        <span class="c-keyword">if</span> (z->hp &lt; <span class="c-number">0</span>) z->hp = <span class="c-number">0</span>;
+    }
+}
+
+<span class="c-keyword">void</span> receberDano(Player *p, <span class="c-number">int</span> danoInimigo) {
+    p->hp -= danoInimigo;
+    <span class="c-keyword">if</span> (p->hp &lt; <span class="c-number">0</span>) p->hp = <span class="c-number">0</span>;
+}
+
+<span class="c-keyword">void</span> recarregar(Player *p) {
+    p->balas = p->balasMax;
+}`
+            },
+            interface_c: {
+                title: "interface.c",
+                badge: "Módulo Visual • Portabilidade de Viewport",
+                code: `<span class="c-macro">#include &lt;stdio.h&gt;</span>
+<span class="c-macro">#include &lt;stdlib.h&gt;</span>
+<span class="c-macro">#include "interface.h"</span>
+
+<span class="c-keyword">void</span> limparTerminal() {
+    <span class="c-macro">#ifdef _WIN32</span>
+        <span class="c-keyword">system</span>(<span class="c-string">"cls"</span>);   
+    <span class="c-macro">#else</span>
+        <span class="c-keyword">system</span>(<span class="c-string">"clear"</span>); 
+    <span class="c-macro">#endif</span>
+}
+
+<span class="c-keyword">void</span> mostrarBarra(<span class="c-keyword">int</span> atual, <span class="c-keyword">int</span> max) {
+    <span class="c-keyword">int</span> preenchimento = (atual * <span class="c-number">10</span>) / max; 
+    <span class="c-keyword">printf</span>(<span class="c-string">"["</span>);
+    <span class="c-keyword">for</span> (<span class="c-keyword">int</span> i = <span class="c-number">0</span>; i &lt; <span class="c-number">10</span>; i++) {
+        <span class="c-keyword">if</span> (i &lt; preenchimento) <span class="c-keyword">printf</span>(<span class="c-string">"|"</span>); 
+        <span class="c-keyword">else printf</span>(<span class="c-string">"."</span>);
+    }
+    <span class="c-keyword">printf</span>(<span class="c-string">"] (%d/%d)\\n"</span>, atual, max);
+}
+
+<span class="c-keyword">void</span> mostrarHUD(Player *p, Zombie *z, <span class="c-keyword">int</span> wave) {
+    <span class="c-keyword">printf</span>(<span class="c-string">"\\n===================================\\n  WAVE %d\\n===================================\\n"</span>, wave);
+    <span class="c-keyword">if</span> (p->balas == <span class="c-number">0</span>) { 
+        <span class="c-keyword">printf</span>(<span class="c-string">" [!] SEM BALAS! VOCE PRECISA RECARREGAR [!]\\n-----------------------------------\\n"</span>);
+    }
+    <span class="c-keyword">printf</span>(<span class="c-string">"Player HP:   "</span>); mostrarBarra(p->hp, p->hpMax);
+    <span class="c-keyword">printf</span>(<span class="c-string">"Balas: %d/%d | Kills: %d\\n-----------------------------------\\n"</span>, p->balas, p->balasMax, p->kills);
+    <span class="c-keyword">if</span> (z != NULL) { <span class="c-keyword">printf</span>(<span class="c-string">"Zombie Atual: %s\\nZombie HP:   "</span>, z->nome); mostrarBarra(z->hp, z->hpMax); }
+}
+
+<span class="c-keyword">int</span> obterEscolhaMenu() { <span class="c-keyword">int</span> e; <span class="c-keyword">scanf</span>(<span class="c-string">"%d"</span>, &e); <span class="c-keyword">return</span> e; }
+<span class="c-keyword">void</span> mostrarMenu() { <span class="c-keyword">printf</span>(<span class="c-string">"=== ZOMBIE SURVIVAL ENGINE ===\\nEnter p/ iniciar..."</span>); <span class="c-keyword">getchar</span>(); }
+<span class="c-keyword">void</span> mostrarAnimacao(<span class="c-keyword">char</span> *m) { <span class="c-keyword">printf</span>(<span class="c-string">"\\n[>] %s..."</span>, m); <span class="c-keyword">fflush</span>(stdout); }
+<span class="c-keyword">void</span> mostrarGameOver(<span class="c-keyword">int</span> k) { <span class="c-keyword">printf</span>(<span class="c-string">"\\n=== GAME OVER ===\\nTotal de Mortes: %d\\n1-Sim\\n0-Nao\\nEscolha: "</span>, k); }`
+            },
+            game_c: {
+                title: "game.c",
+                badge: "Módulo Controlador Central • Ondas Infinitas & Rotação Cíclica",
+                code: `<span class="c-macro">#include &lt;stdio.h&gt;</span>
+<span class="c-macro">#include &lt;stdbool.h&gt;</span>
+<span class="c-macro">#include &lt;string.h&gt;</span>
+<span class="c-macro">#include "game.h"</span>
+
+<span class="c-keyword">void</span> iniciarWave(Fila *f, <span class="c-keyword">int</span> wave) {
+    <span class="c-keyword">int</span> qtdZumbis = wave * <span class="c-number">2</span>; 
+    <span class="c-keyword">for</span> (<span class="c-keyword">int</span> i = <span class="c-number">0</span>; i &lt; qtdZumbis; i++) {
+        <span class="c-keyword">if</span> (wave == <span class="c-number">1</span>) {
+            enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>);
+        } <span class="c-keyword">else if</span> (wave == <span class="c-number">2</span>) {
+            <span class="c-keyword">if</span> (i % <span class="c-number">2</span> == <span class="c-number">0</span>) enqueueZombie(f, <span class="c-string">"RUNNER"</span>, <span class="c-number">40</span>, <span class="c-number">12</span>);
+            <span class="c-keyword">else</span> enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>);
+        } <span class="c-keyword">else</span> { <span class="c-comment">// ALGORITMO DE HORDA INFINITA ROTATIVA POR RESTO DE DIVISÃO POR MÓDULO</span>
+            <span class="c-keyword">if</span> (i % <span class="c-number">3</span> == <span class="c-number">0</span>)      enqueueZombie(f, <span class="c-string">"WALKER"</span>, <span class="c-number">30</span>, <span class="c-number">8</span>);
+            <span class="c-keyword">else if</span> (i % <span class="c-number">3</span> == <span class="c-number">1</span>) enqueueZombie(f, <span class="c-string">"RUNNER"</span>, <span class="c-number">40</span>, <span class="c-number">12</span>);
+            <span class="c-keyword">else</span>                 enqueueZombie(f, <span class="c-string">"TANK"</span>, <span class="c-number">80</span>, <span class="c-number">20</span>);
+        }
+    }
+}
+
+<span class="c-keyword">void</span> loopJogo() {
+    <span class="c-keyword">int</span> continuarNoJogo = <span class="c-number">1</span>;
+    <span class="c-keyword">while</span> (continuarNoJogo == <span class="c-number">1</span>) { 
+        Player jogador; inicializarPlayer(&jogador);
+        Fila filaZumbis; inicializarFila(&filaZumbis);
+        <span class="c-number">int</span> waveAtual = <span class="c-number">1</span>; <span class="c-keyword">bool</span> rodandoWave = <span class="c-number">true</span>;
+        mostrarMenu();
+        
+        <span class="c-keyword">while</span> (rodandoWave) { 
+            limparTerminal(); iniciarWave(&filaZumbis, waveAtual); mostrarAnimacao(<span class="c-string">"Zumbis se aproximando"</span>);
+            <span class="c-keyword">int</span> distancia = <span class="c-number">4</span>; 
+            
+            <span class="c-keyword">while</span> (!filaVazia(&filaZumbis) && jogador.hp > <span class="c-number">0</span>) { 
+                Zombie *zumbiAtual = filaZumbis.inicio; 
+                mostrarHUD(&jogador, zumbiAtual, waveAtual);
+                <span class="c-keyword">int</span> escolha = obterEscolhaMenu();
+                <span class="c-keyword">int</span> avanco = (<span class="c-keyword">strcmp</span>(zumbiAtual->nome, <span class="c-string">"RUNNER"</span>) == <span class="c-number">0</span>) ? <span class="c-number">2</span> : <span class="c-number">1</span>; 
+                
+                <span class="c-keyword">if</span> (escolha == <span class="c-number">1</span>) { atacarZombie(&jogador, zumbiAtual); distancia -= avanco; 
+                    <span class="c-keyword">if</span> (zumbiAtual->hp &lt;= <span class="c-number">0</span>) { dequeueZombie(&filaZumbis); distancia = <span class="c-number">4</span>; jogador.kills++; }
+                }
+                <span class="c-keyword">else if</span> (escolha == <span class="c-number">2</span>) { recarregar(&jogador); distancia -= avanco; }
+                <span class="c-keyword">else if</span> (escolha == <span class="c-number">3</span>) { distancia += <span class="c-number">2</span>; distancia -= avanco; } 
+                
+                <span class="c-keyword">if</span> (distancia &lt; <span class="c-number">0</span>) distancia = <span class="c-number">0</span>;
+                <span class="c-keyword">if</span> (distancia &gt; <span class="c-number">8</span>) distancia = <span class="c-number">8</span>;
+                <span class="c-keyword">if</span> (distancia == <span class="c-number">0</span>) receberDano(&jogador, zumbiAtual->dano); 
+            }
+            <span class="c-keyword">if</span> (jogador.hp &lt;= <span class="c-number">0</span>) {
+                rodandoWave = <span class="c-number">false</span>;
+                <span class="c-keyword">while</span> (!filaVazia(&filaZumbis)) dequeueZombie(&filaZumbis); 
+                mostrarGameOver(jogador.kills); continuarNoJogo = obterEscolhaMenu();
+            } <span class="c-keyword">else</span> { waveAtual++; }
+        }
+    }
+}`
+            },
+            readme_md: {
+                title: "README.md",
+                badge: "Documentação Geral do Repositório",
+                code: `# Simulação Zombie Survival\nControle assintótico ótimo O(1) de inserção e remoção de nós baseado em Fila FIFO Encadeada.`
+            }
+        };
+
+        // CLIENT TACTICAL ENGINE ENVIRONMENT
+        let gameState = { hp: 100, balas: 6, kills: 0, wave: 1, zHP: 30, zHPMax: 30, zDist: 4, zType: "WALKER", zDano: 8 };
+
+        function openCodeInspector(key, element) {
+            document.getElementById('slides-deck-panel').style.display = 'none';
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            const file = filesData[key];
+            document.getElementById('file-title-display').innerHTML = `<i class="fa-solid ${key.includes('_h') ? 'fa-h' : key.includes('md') ? 'fa-markdown' : 'fa-c'}"></i> ${file.title}`;
+            document.getElementById('file-badge').innerText = file.badge;
+            document.getElementById('code-box').innerHTML = file.code;
+            
+            document.getElementById('code-inspector-panel').classList.add('open');
+        }
+
+        function closeCodeInspector() {
+            document.getElementById('code-inspector-panel').classList.remove('open');
+            document.querySelectorAll('.file-list .file-item').forEach(el => el.classList.remove('active'));
+        }
+
+        function openSlidesView(element) {
+            closeCodeInspector();
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('slides-deck-panel').style.display = 'flex';
+        }
+
+        function closeSlidesView() {
+            document.getElementById('slides-deck-panel').style.display = 'none';
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+        }
+
+        function updateSimUI() {
+            document.getElementById('p-hp-text').innerText = `${gameState.hp}/100`;
+            document.getElementById('p-hp-bar').style.width = `${gameState.hp}%`;
+            document.getElementById('p-balas-text').innerText = `${gameState.balas}/6`;
+            document.getElementById('p-balas-bar').style.width = `${(gameState.balas / 6) * 100}%`;
+            document.getElementById('p-kills').innerText = gameState.kills;
+            document.getElementById('wave-badge').innerText = `Wave ${gameState.wave}`;
+            
+            const containerWidth = document.getElementById('track-lanes-element').clientWidth;
+            const paddingCompensation = 24; 
+            const nodeWidth = 70;
+            const availableSpace = containerWidth - paddingCompensation - nodeWidth;
+            const targetLeft = paddingCompensation + (availableSpace * (gameState.zDist / 8));
+            
+            document.getElementById('zombie-ico').style.left = `${targetLeft}px`;
+            
+            if(gameState.zType === "RUNNER") {
+                document.getElementById('zombie-ico').style.backgroundColor = "var(--accent-runner)";
+                document.getElementById('zombie-ico').style.borderColor = "#fda4af";
+            } else if(gameState.zType === "TANK") {
+                document.getElementById('zombie-ico').style.backgroundColor = "var(--accent-tank)";
+                document.getElementById('zombie-ico').style.borderColor = "#fef08a";
+            } else {
+                document.getElementById('zombie-ico').style.backgroundColor = "#7c2d12";
+                document.getElementById('zombie-ico').style.borderColor = "var(--accent-runner)";
+            }
+
+            document.getElementById('zombie-info-text').innerText = `Monitoramento: ${gameState.zType} (HP: ${gameState.zHP}/${gameState.zHPMax})`;
+        }
+
+        function triggerTurn(opcao) {
+            if(gameState.hp <= 0) {
+                resetGame();
+                return;
+            }
+
+            let avanco = (gameState.zType === "RUNNER") ? 2 : 1;
+            let log = "";
+
+            if (opcao === 1) { // ATACAR
+                if (gameState.balas > 0) {
+                    gameState.balas--;
+                    gameState.zHP -= 20;
+                    log = `Disparo efetuado (-1 Bala / -20 HP do Alvo). `;
+                    gameState.zDist -= avanco;
+                    
+                    if (gameState.zHP <= 0) {
+                        gameState.kills++;
+                        log = "Zumbi eliminado! dequeueZombie() disparada. Sucessor assume o início. ";
+                        spawnNextZombie();
+                    }
+                } else {
+                    log = "FALHA DE INSTRUÇÃO: ARMA SEM BALAS! O zumbi avançou livremente. ";
+                    gameState.zDist -= avanco;
+                }
+            } 
+            else if (opcao === 2) { // RECARREGAR
+                gameState.balas = 6;
+                log = "Munição sincronizada (6/6). Turno nulo para o Player, horda avança. ";
+                gameState.zDist -= avanco;
+            } 
+            else if (opcao === 3) { // FUGIR
+                gameState.zDist += 2;
+                log = `Ação defensiva de recuo executada (+2 Casas Virtuais). `;
+                gameState.zDist -= avanco;
+            }
+
+            if (gameState.zDist < 0) gameState.zDist = 0;
+            if (gameState.zDist > 8) gameState.zDist = 8;
+
+            if (gameState.zDist === 0 && gameState.zHP > 0) {
+                gameState.hp -= gameState.zDano;
+                log += ` Gatilho de Colisão! O ${gameState.zType} colou e causou ${gameState.zDano} de dano!`;
+                if(gameState.hp <= 0) {
+                    gameState.hp = 0;
+                    log = "GAME OVER. Laço interrompido. Clique em qualquer ação para purgar a Fila e reiniciar.";
+                }
+            }
+
+            document.getElementById('sim-log').innerText = log;
+            updateSimUI();
+        }
+
+        function spawnNextZombie() {
+            gameState.zDist = 4; 
+            
+            if (gameState.kills === 0) {
+                gameState.zType = "WALKER"; gameState.zHP = 30; gameState.zHPMax = 30; gameState.zDano = 8;
+                gameState.wave = 1;
+            } else if (gameState.kills === 1) {
+                gameState.zType = "RUNNER"; gameState.zHP = 40; gameState.zHPMax = 40; gameState.zDano = 12;
+                gameState.wave = 2;
+            } else {
+                gameState.wave = Math.floor(gameState.kills / 2) + 1;
+                let ciclo = gameState.kills % 3;
+                
+                if (ciclo === 0) {
+                    gameState.zType = "WALKER"; gameState.zHP = 30; gameState.zHPMax = 30; gameState.zDano = 8;
+                } else if (ciclo === 1) {
+                    gameState.zType = "RUNNER"; gameState.zHP = 40; gameState.zHPMax = 40; gameState.zDano = 12;
+                } else {
+                    gameState.zType = "TANK"; gameState.zHP = 80; gameState.zHPMax = 80; gameState.zDano = 20;
+                }
+            }
+        }
+
+        function resetGame() {
+            gameState = { hp: 100, balas: 6, kills: 0, wave: 1, zHP: 30, zHPMax: 30, zDist: 4, zType: "WALKER", zDano: 8 };
+            document.getElementById('sim-log').innerText = "Rotina de limpeza completada. Heap limpo via free(). Partida reiniciada.";
+            updateSimUI();
+        }
+
+        window.addEventListener('resize', updateSimUI);
+        updateSimUI();
+    </script>
+</body>
+</html>
