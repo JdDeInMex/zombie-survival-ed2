@@ -51,7 +51,9 @@
 
         .file-tree-title { font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
         .file-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-        .file-item {
+        
+        /* Links e itens da lista */
+        .file-item, .file-link {
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
@@ -63,19 +65,21 @@
             gap: 10px;
             transition: all 0.15s ease;
             border: 1px solid transparent;
+            text-decoration: none;
         }
-        .file-item:hover { background-color: rgba(222, 255, 154, 0.02); color: #fff; }
+        .file-item:hover, .file-link:hover { background-color: rgba(222, 255, 154, 0.02); color: #fff; }
         .file-item.active {
             background-color: rgba(222, 255, 154, 0.05);
             border-color: rgba(222, 255, 154, 0.15);
             color: var(--accent-neon);
             font-weight: 700;
         }
-        .file-item i { font-size: 14px; width: 16px; text-align: center; }
+        .file-item i, .file-link i { font-size: 14px; width: 16px; text-align: center; }
         .file-item .fa-c { color: #3b82f6; }
         .file-item .fa-h { color: #a855f7; }
         .file-item .fa-markdown { color: #f97316; }
-        .file-item .fa-chalkboard-user { color: var(--accent-neon); }
+        .sidebar .fa-file-pdf { color: #f43f5e; }
+        .sidebar .fa-sliders { color: var(--accent-neon); }
 
         .team-footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
@@ -191,7 +195,8 @@
         
         <div class="file-tree-title" style="margin-top: 10px; color: var(--accent-green);">Apresentação Técnica</div>
         <ul class="file-list" style="margin-bottom: 25px;">
-            <li class="file-item" onclick="openSlidesView(this)"><i class="fa-solid fa-chalkboard-user"></i>Apresentação (Slides)</li>
+            <a class="file-link" href="Zombie Survival.pdf" target="_blank"><i class="fa-solid fa-file-pdf"></i>Apresentação (Slides)</a>
+            <li class="file-item" onclick="openSlidesView(this)"><i class="fa-solid fa-sliders"></i>Detalhes da Estrutura</li>
         </ul>
 
         <div class="file-tree-title">Módulos do Sistema (C)</div>
@@ -296,7 +301,7 @@
 
             <div class="slide-frame">
                 <h2>1. Topologia de Pastas e Desacoplamento Arquitetural</h2>
-                <p style="margin-bottom: 20px; font-size: 15px;">O ecossistema foi modularizado de forma estrita sob o princípio de <strong>loose coupling</strong> (acoplamento fraco), isolando assinaturas de contratos lógicos de suas implementações:</p>
+                <p style="margin-bottom: 20px; font-size: 15px;">O ecossistema foi modularizado de forma estrita sob o princípio de <strong>loose coupling</strong> (acoplamento fraco), isolando responsabilidades em módulos coesos e auto-suficientes:</p>
                 <code style="background:#000; padding:15px; border-radius:6px; margin-bottom:20px; font-size:13px; display:block; border: 1px solid var(--border-color);">
 • main.c       -> Ponto de entrada limpo (Bootstrap de inicialização da pilha).
 • game.c/h     -> Core Engine (Laços aninhados orquestradores da regra de negócio tática).
@@ -340,8 +345,8 @@
     <span class="c-keyword">if</span> (novo == NULL) <span class="c-keyword">return</span>;                         <span class="c-comment">// L3: Proteção preventiva contra Out-of-Memory</span>
     <span class="c-keyword">strcpy</span>(novo->nome, nome);                         <span class="c-comment">// L4: Deep copy literal dos caracteres</span>
     novo->hp = hp; novo->hpMax = hp; novo->dano = dano; novo->prox = NULL;
-    <span class="c-keyword">if</span> (f->inicio == NULL) { f->inicio = novo; f->fim = novo; }
-    <span class="c-keyword">else</span> { f->fim->prox = novo; f->fim = novo; }       <span class="c-comment">// L8: Vinculação do ponteiro e avanço da cauda</span>
+    if (f->inicio == NULL) { f->inicio = novo; f->fim = novo; }
+    else { f->fim->prox = novo; f->fim = novo; }       <span class="c-comment">// L8: Vinculação do ponteiro e avanço da cauda</span>
 }</code>
             </div>
 
@@ -350,10 +355,10 @@
                 <p style="margin-bottom: 15px; color:#ef4444; font-size: 15px; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> O Perigo do Nó Fantasma (Memory Leak):</p>
                 <p style="margin-bottom: 15px; font-size: 14.5px;">Se avançássemos o ponteiro de cabeçalho diretamente sem resguardar o endereço corrente, o bloco de dados do zumbi morto ficaria isolado no Heap, gerando vazamento crônico de RAM.</p>
                 <code style="background:#000; padding:15px; border-radius:6px; font-size:12.5px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">void</span> dequeueZombie(Fila *f) {
-    <span class="c-keyword">if</span> (f->inicio == NULL) <span class="c-keyword">return</span>;
+    if (f->inicio == NULL) return;
     Zombie *aux = f->inicio;     <span class="c-comment">// L3: Retém a referência física na Stack antes do avanço</span>
     f->inicio = f->inicio->prox; <span class="c-comment">// L4: A cabeça assume o endereço apontado pelo campo prox</span>
-    <span class="c-keyword">if</span> (f->inicio == NULL) f->fim = NULL;
+    if (f->inicio == NULL) f->fim = NULL;
     <span class="c-keyword">free</span>(aux);                   <span class="c-comment">// L6: Liberação física imediata dos bytes devolvidos ao SO</span>
 }</code>
             </div>
@@ -408,7 +413,7 @@
     </div>
 
     <script>
- // EXPANDED DATA DICTIONARY CONTAINING 100% VERBATIM SOURCE CODES FOR AUDIT
+        // EXPANDED DATA DICTIONARY CONTAINING 100% VERBATIM SOURCE CODES FOR AUDIT
         const filesData = {
             main_c: {
                 title: "main.c",
@@ -499,7 +504,7 @@
 <span class="c-comment">// Assinaturas gráficas por texto: manipulam streams de saída e viewport de console</span>
 <span class="c-keyword">void</span> limparTerminal();
 <span class="c-keyword">void</span> mostrarBarra(<span class="c-keyword">int</span> atual, <span class="c-keyword">int</span> max);
-<span class="c-keyword">void</span> mostrarHUD(Player *p, Zombie *z, <span class="c-keyword">int</span> wave);
+<span class="c-keyword">void</span> mostrarHUD(Player *p, Zombie *z, <span class="c-number">int</span> wave);
 <span class="c-keyword">int</span> obterEscolhaMenu();
 <span class="c-keyword">void</span> mostrarMenu();
 <span class="c-keyword">void</span> mostrarAnimacao(<span class="c-keyword">char</span> *msg);
@@ -608,8 +613,8 @@
     <span class="c-keyword">if</span> (z != NULL) { <span class="c-keyword">printf</span>(<span class="c-string">"Zombie Atual: %s\\nZombie HP:   "</span>, z->nome); mostrarBarra(z->hp, z->hpMax); }
 }
 
-<span class="c-keyword">int</span> obterEscolhaMenu() { <span class="c-keyword">int</span> e; <span class="c-keyword">scanf</span>(<span class="c-string">"%d"</span>, &e); <span class="c-keyword">return e</span>; }
-<span class="c-keyword">void</span> mostrarMenu() { <span class="c-keyword">printf</span>(<span class="c-string">"=== ZOMBIE SURVIVAL ENGINE ===\\nEnter p/ iniciar..."</span>); <span class="c-keyword">getchar</span>(); }
+<span class="c-keyword">int</span> obterEscolhaMenu() { <span class="c-keyword">int</span> e; <span class="c-keyword">scanf</span>(<span class="c-string">"%d"</span>, &e); <span class="c-keyword">return</span> e; }
+<span class="c-keyword">void</span> mostrarMenu() { <span class="c-keyword">printf</span>(<span class="c-string">"=== ZOMBIE SURVIVAL ENGINE ===\\nPressione Enter para rodar..."</span>); <span class="c-keyword">getchar</span>(); }
 <span class="c-keyword">void</span> mostrarAnimacao(<span class="c-keyword">char</span> *m) { 
     <span class="c-keyword">printf</span>(<span class="c-string">"\\n[>] %s..."</span>, m); 
     <span class="c-keyword">fflush</span>(stdout); <span class="c-comment">// Crucial: limpa o buffer de stream de saída, forçando o texto no console imediatamente</span>
@@ -692,6 +697,7 @@
 O ecossistema implementa escalabilidade infinita de ondas e rotação cíclica assíncrona por resto de divisão por módulo (<span class="c-type">i % 3</span>), alternando de forma encadeada os estados de dados entre nós do tipo WALKER, RUNNER e TANK.`
             }
         };
+
         // CLIENT TACTICAL ENGINE ENVIRONMENT
         let gameState = { hp: 100, balas: 6, kills: 0, wave: 1, zHP: 30, zHPMax: 30, zDist: 4, zType: "WALKER", zDano: 8 };
 
