@@ -171,7 +171,7 @@
             overflow-y: auto;
         }
         .slide-deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #1a1a24; padding-bottom: 15px; }
-        .slide-frame { background: #050508; border: 1px solid #151520; border-radius: 12px; padding: 40px; margin-bottom: 40px; min-height: 700px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .slide-frame { background: #050508; border: 1px solid #151520; border-radius: 12px; padding: 40px; margin-bottom: 40px; min-height: 600px; display: flex; flex-direction: column; justify-content: center; position: relative; }
         .slide-frame h2 { color: var(--accent-neon); font-size: 32px; margin-bottom: 20px; text-transform: uppercase; }
 
         /* Syntax Highlight Code Tokens */
@@ -296,7 +296,7 @@
 
             <div class="slide-frame">
                 <h2>1. Topologia de Pastas e Desacoplamento Arquitetural</h2>
-                <p style="margin-bottom: 20px; font-size: 15px;">O ecossistema foi modularizado de forma estrita sob o princípio de <strong>loose coupling</strong> (acoplamento fraco), isolando assinaturas de contratos lógicos de suas implementações:</p>
+                <p style="margin-bottom: 20px; font-size: 15px;">O ecossistema foi modularizado de forma estrita sob o princípio de <strong>loose coupling</strong> (acoplamento fraco), isolando responsabilidades em módulos coesos e auto-suficientes:</p>
                 <code style="background:#000; padding:15px; border-radius:6px; margin-bottom:20px; font-size:13px; display:block; border: 1px solid var(--border-color);">
 • main.c       -> Ponto de entrada limpo (Bootstrap de inicialização da pilha).
 • game.c/h     -> Core Engine (Laços aninhados orquestradores da regra de negócio tática).
@@ -305,7 +305,7 @@
 • interface.c/h-> Viewport Interface (Abstração de diretivas cross-platform e I/O).
                 </code>
                 <p style="font-size: 14px; color: #94a3b8;">
-                    <strong>Destaque Técnico:</strong> O isolamento estrito via arquivos de cabeçalho (<code>.h</code>) mitigou a ocorrência de conflitos de merge no Git, assegurando o desenvolvimento paralelo.
+                    <strong>Destaque Técnico:</strong> O isolamento estrito via arquivos de cabeçalho (<code>.h</code>) mitigaram a ocorrência de conflitos de merge no Git, assegurando o desenvolvimento paralelo.
                 </p>
             </div>
 
@@ -340,8 +340,8 @@
     <span class="c-keyword">if</span> (novo == NULL) <span class="c-keyword">return</span>;                         <span class="c-comment">// L3: Proteção preventiva contra Out-of-Memory</span>
     <span class="c-keyword">strcpy</span>(novo->nome, nome);                         <span class="c-comment">// L4: Deep copy literal dos caracteres</span>
     novo->hp = hp; novo->hpMax = hp; novo->dano = dano; novo->prox = NULL;
-    <span class="c-keyword">if</span> (f->inicio == NULL) { f->inicio = novo; f->fim = novo; }
-    <span class="c-keyword">else</span> { f->fim->prox = novo; f->fim = novo; }       <span class="c-comment">// L8: Vinculação do ponteiro e avanço da cauda</span>
+    if (f->inicio == NULL) { f->inicio = novo; f->fim = novo; }
+    else { f->fim->prox = novo; f->fim = novo; }       <span class="c-comment">// L8: Vinculação do ponteiro e avanço da cauda</span>
 }</code>
             </div>
 
@@ -350,10 +350,10 @@
                 <p style="margin-bottom: 15px; color:#ef4444; font-size: 15px; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> O Perigo do Nó Fantasma (Memory Leak):</p>
                 <p style="margin-bottom: 15px; font-size: 14.5px;">Se avançássemos o ponteiro de cabeçalho diretamente sem resguardar o endereço corrente, o bloco de dados do zumbi morto ficaria isolado no Heap, gerando vazamento crônico de RAM.</p>
                 <code style="background:#000; padding:15px; border-radius:6px; font-size:12.5px; margin-bottom: 20px; display:block; border: 1px solid var(--border-color);"><span class="c-keyword">void</span> dequeueZombie(Fila *f) {
-    <span class="c-keyword">if</span> (f->inicio == NULL) <span class="c-keyword">return</span>;
+    if (f->inicio == NULL) return;
     Zombie *aux = f->inicio;     <span class="c-comment">// L3: Retém a referência física na Stack antes do avanço</span>
     f->inicio = f->inicio->prox; <span class="c-comment">// L4: A cabeça assume o endereço apontado pelo campo prox</span>
-    <span class="c-keyword">if</span> (f->inicio == NULL) f->fim = NULL;
+    if (f->inicio == NULL) f->fim = NULL;
     <span class="c-keyword">free</span>(aux);                   <span class="c-comment">// L6: Liberação física imediata dos bytes devolvidos ao SO</span>
 }</code>
             </div>
@@ -382,7 +382,7 @@
 
             <div class="slide-frame">
                 <h2>7. Matriz de Decisão Espacial – Pista Expandida de 0 a 8 Casas</h2>
-                <p style="margin-bottom: 15px; font-size: 15px;">O combate deixa de ser uma mera subtração estática. O motor orquestra um **Vetor Virtual de Distância Linear Relativa**. O nascimento do zumbi ativa o spawn fixo em 4 casas. A partir daí, cada ação dita uma mutação no espaço:</p>
+                <p style="margin-bottom: 15px; font-size: 15px;">O combate deixa de ser uma mera subtração estática. O motor orquestra um **Vetor Virtual de Distância Linear Relativa**. O nascimento do zumbi ativa o spawn fixo in 4 casas. A partir daí, cada ação dita uma mutação no espaço:</p>
                 <ul style="padding-left: 20px; font-size: 14px; line-height: 1.8; margin-bottom: 20px;">
                     <li><strong>Ação Atacar (Opção 1):</strong> Dispara munição, reduz HP e o zumbi avança sua taxa de passos corrente (1 ou 2).</li>
                     <li><strong>Ação Recarregar (Opção 2):</strong> Sincroniza o pente (6/6). O turno do player é nulo e o inimigo avança livremente encurtando a horda.</li>
@@ -408,38 +408,25 @@
     </div>
 
     <script>
-        // EXPANDED DATA DICTIONARY CONTAINING 100% VERBATIM SOURCE CODES FOR AUDIT
+        // DATA MAP EXPOSING 100% COMPLETE SOURCE CODE FILE STRUCTURES WITHOUT TRUNCATION OR Poluted Headers
         const filesData = {
             main_c: {
                 title: "main.c",
                 badge: "Bootstrap de Ignição • Complexidade: O(1)",
-                code: `<span class="c-comment">// ============================================================================</span>
-<span class="c-comment">// ARQUIVO: main.c</span>
-<span class="c-comment">// AUTOR: Jonathan (Módulo Engine)</span>
-<span class="c-comment">// DESCRIÇÃO: Ponto de entrada exclusivo para inicialização do binário executável.</span>
-<span class="c-comment">// ============================================================================</span>
-
-<span class="c-macro">#include "game.h"</span> <span class="c-comment">// Vincula o contrato lógico do motor central de turnos</span>
+                code: `<span class="c-macro">#include "game.h"</span>
 
 <span class="c-keyword">int</span> main() {
-    <span class="c-comment">// Transfere a totalidade do fluxo computacional ao laço aninhado principal</span>
     loopJogo(); 
-    
-    <span class="c-keyword">return</span> <span class="c-number">0</span>; <span class="c-comment">// Código de encerramento devolvido de forma limpa ao SO</span>
+    <span class="c-keyword">return</span> <span class="c-number">0</span>;
 }`
             },
             game_h: {
                 title: "game.h",
                 badge: "Contrato de Assinaturas e Encapsulamento",
-                code: `<span class="c-comment">// ============================================================================</span>
-<span class="c-comment">// ARQUIVO: game.h</span>
-<span class="c-comment">// DESCRIÇÃO: Assinaturas globais estáveis que exportam as capacidades do motor.</span>
-<span class="c-comment">// ============================================================================</span>
-
-<span class="c-macro">#ifndef GAME_H</span>
+                code: `<span class="c-macro">#ifndef GAME_H</span>
 <span class="c-macro">#define GAME_H</span>
 
-<span class="c-macro">#include "zombie.h"</span> <span class="c-comment">// Dependência estrutural de nós para injeção de waves</span>
+<span class="c-macro">#include "zombie.h"</span>
 
 <span class="c-keyword">void</span> iniciarWave(Fila *f, <span class="c-keyword">int</span> wave);
 <span class="c-keyword">void</span> loopJogo();
@@ -449,26 +436,20 @@
             zombie_h: {
                 title: "zombie.h",
                 badge: "Modelagem de Tipos Abstratos Dinâmicos",
-                code: `<span class="c-comment">// ============================================================================</span>
-<span class="c-comment">// ARQUIVO: zombie.h</span>
-<span class="c-comment">// AUTOR: Moisés (Módulo de Dados)</span>
-<span class="c-comment">// DESCRIÇÃO: Definição estrutural de nós auto-referenciados para hordas no Heap.</span>
-<span class="c-comment">// ============================================================================</span>
-
-<span class="c-macro">#ifndef ZOMBIE_H</span>
+                code: `<span class="c-macro">#ifndef ZOMBIE_H</span>
 <span class="c-macro">#define ZOMBIE_H</span>
 
 <span class="c-keyword">typedef struct</span> Zombie {
-    <span class="c-keyword">char</span> nome[<span class="c-number">30</span>];       <span class="c-comment">// Vetor contíguo de 30 bytes para alocação de string de tipo</span>
-    <span class="c-keyword">int</span> hp;              <span class="c-comment">// 4 bytes - Capacidade vital corrente do nó</span>
-    <span class="c-keyword">int</span> hpMax;           <span class="c-comment">// 4 bytes - Teto fixado para renderização de proporção</span>
-    <span class="c-keyword">int</span> dano;            <span class="c-comment">// 4 bytes - Carga ofensiva aplicada na colisão virtual</span>
-    <span class="c-keyword">struct</span> Zombie *prox; <span class="c-comment">// Ponteiro de 8 bytes (x64) armazenando o endereço do sucessor</span>
+    <span class="c-keyword">char</span> nome[<span class="c-number">30</span>];       
+    <span class="c-keyword">int</span> hp;              
+    <span class="c-keyword">int</span> hpMax;           
+    <span class="c-keyword">int</span> dano;            
+    <span class="c-keyword">struct</span> Zombie *prox; 
 } Zombie;
 
 <span class="c-keyword">typedef struct</span> {
-    Zombie *inicio;      <span class="c-comment">// Cabeça da Fila (Remoção FIFO em O(1))</span>
-    Zombie *fim;         <span class="c-comment">// Cauda da Fila (Inserção direta em O(1))</span>
+    Zombie *inicio;      
+    Zombie *fim;         
 } Fila;
 
 <span class="c-keyword">void</span> inicializarFila(Fila *f);
@@ -530,31 +511,43 @@
 <span class="c-macro">#include "zombie.h"</span>
 
 <span class="c-keyword">void</span> inicializarFila(Fila *f) {
-    f->inicio = NULL; f->fim = NULL;
+    f->inicio = NULL; 
+    f->fim = NULL; 
 }
 
 <span class="c-keyword">int</span> filaVazia(Fila *f) {
-    <span class="c-keyword">return</span> f->inicio == NULL;
+    <span class="c-keyword">return</span> f->inicio == NULL; 
 }
 
 <span class="c-keyword">void</span> enqueueZombie(Fila *f, <span class="c-keyword">char</span> *nome, <span class="c-keyword">int</span> hp, <span class="c-keyword">int</span> dano) {
     Zombie *novo = (Zombie*) <span class="c-keyword">malloc</span>(<span class="c-keyword">sizeof</span>(Zombie)); 
     <span class="c-keyword">if</span> (novo == NULL) <span class="c-keyword">return</span>; 
+    
     <span class="c-keyword">strcpy</span>(novo->nome, nome); 
-    novo->hp = hp; novo->hpMax = hp; novo->dano = dano; novo->prox = NULL;
+    novo->hp = hp; 
+    novo->hpMax = hp; 
+    novo->dano = dano; 
+    novo->prox = NULL; 
     
     <span class="c-keyword">if</span> (filaVazia(f)) { 
-        f->inicio = novo; f->fim = novo; 
+        f->inicio = novo; 
+        f->fim = novo; 
     } <span class="c-keyword">else</span> { 
-        f->fim->prox = novo; f->fim = novo; 
+        f->fim->prox = novo; 
+        f->fim = novo;       
     }
 }
 
 <span class="c-keyword">void</span> dequeueZombie(Fila *f) {
     <span class="c-keyword">if</span> (filaVazia(f)) <span class="c-keyword">return</span>;
+    
     Zombie *aux = f->inicio;     
     f->inicio = f->inicio->prox; 
-    <span class="c-keyword">if</span> (f->inicio == NULL) f->fim = NULL;
+    
+    <span class="c-keyword">if</span> (f->inicio == NULL) {
+        f->fim = NULL; 
+    }
+    
     <span class="c-keyword">free</span>(aux); 
 }`
             },
@@ -565,23 +558,26 @@
 <span class="c-macro">#include "player.h"</span>
 
 <span class="c-keyword">void</span> inicializarPlayer(Player *p) {
-    p->hp = <span class="c-number">100</span>; p->hpMax = <span class="c-number">100</span>; p->balas = <span class="c-number">6</span>; p->balasMax = <span class="c-number">6</span>; p->kills = <span class="c-number">0</span>; p->dano = <span class="c-number">20</span>;
+    p->hp = <span class="c-number">100</span>; p->hpMax = <span class="c-number">100</span>; 
+    p->balas = <span class="c-number">6</span>; p->balasMax = <span class="c-number">6</span>; 
+    p->kills = <span class="c-number">0</span>; p->dano = <span class="c-number">20</span>; 
 }
 
 <span class="c-keyword">void</span> atacarZombie(Player *p, Zombie *z) {
     <span class="c-keyword">if</span> (p->balas > <span class="c-number">0</span>) {
-        p->balas--; z->hp -= p->dano;
-        <span class="c-keyword">if</span> (z->hp &lt; <span class="c-number">0</span>) z->hp = <span class="c-number">0</span>;
+        p->balas--;        
+        z->hp -= p->dano;  
+        <span class="c-keyword">if</span> (z->hp &lt; <span class="c-number">0</span>) z->hp = <span class="c-number">0</span>; 
     }
 }
 
 <span class="c-keyword">void</span> receberDano(Player *p, <span class="c-number">int</span> danoInimigo) {
-    p->hp -= danoInimigo;
+    p->hp -= danoInimigo;  
     <span class="c-keyword">if</span> (p->hp &lt; <span class="c-number">0</span>) p->hp = <span class="c-number">0</span>;
 }
 
 <span class="c-keyword">void</span> recarregar(Player *p) {
-    p->balas = p->balasMax;
+    p->balas = p->balasMax; 
 }`
             },
             interface_c: {
@@ -616,11 +612,11 @@
     }
     <span class="c-keyword">printf</span>(<span class="c-string">"Player HP:   "</span>); mostrarBarra(p->hp, p->hpMax);
     <span class="c-keyword">printf</span>(<span class="c-string">"Balas: %d/%d | Kills: %d\\n-----------------------------------\\n"</span>, p->balas, p->balasMax, p->kills);
-    <span class="c-keyword">if</span> (z != NULL) { <span class="c-keyword">printf</span>(<span class="c-string">"Zombie Atual: %s\\nZombie HP:   "</span>, z->nome); mostrarBarra(z->hp, z->hpMax); }
+    if (z != NULL) { <span class="c-keyword">printf</span>(<span class="c-string">"Zombie Atual: %s\\nZombie HP:   "</span>, z->nome); mostrarBarra(z->hp, z->hpMax); }
 }
 
 <span class="c-keyword">int</span> obterEscolhaMenu() { <span class="c-keyword">int</span> e; <span class="c-keyword">scanf</span>(<span class="c-string">"%d"</span>, &e); <span class="c-keyword">return</span> e; }
-<span class="c-keyword">void</span> mostrarMenu() { <span class="c-keyword">printf</span>(<span class="c-string">"=== ZOMBIE SURVIVAL ENGINE ===\\nEnter p/ iniciar..."</span>); <span class="c-keyword">getchar</span>(); }
+<span class="c-keyword">void</span> mostrarMenu() { <span class="c-keyword">printf</span>(<span class="c-string">"=== ZOMBIE SURVIVAL ENGINE ===\\nPressione Enter para rodar..."</span>); <span class="c-keyword">getchar</span>(); }
 <span class="c-keyword">void</span> mostrarAnimacao(<span class="c-keyword">char</span> *m) { <span class="c-keyword">printf</span>(<span class="c-string">"\\n[>] %s..."</span>, m); <span class="c-keyword">fflush</span>(stdout); }
 <span class="c-keyword">void</span> mostrarGameOver(<span class="c-keyword">int</span> k) { <span class="c-keyword">printf</span>(<span class="c-string">"\\n=== GAME OVER ===\\nTotal de Mortes: %d\\n1-Sim\\n0-Nao\\nEscolha: "</span>, k); }`
             },
@@ -688,7 +684,23 @@
             readme_md: {
                 title: "README.md",
                 badge: "Documentação Geral do Repositório",
-                code: `# Simulação Zombie Survival\nControle assintótico ótimo O(1) de inserção e remoção de nós baseado em Fila FIFO Encadeada.`
+                code: `<span class="c-macro"># ============================================================================</span>
+<span class="c-macro"># PROJETO: SIMULAÇÃO TÁTICA ZOMBIE SURVIVAL — ED2</span>
+<span class="c-macro"># DESCRITIVO: Documentação Geral de Repositório Técnico das Estruturas e Complexidades</span>
+<span class="c-macro"># ============================================================================</span>
+
+<span class="c-string">O sistema de software exposto foi inteiramente projetado e modularizado na linguagem C nativa para demonstrar o controle analítico e microscópico sobre a gerência do Heap dinâmico utilizando estruturas de dados lineares e encadeadas.</span>
+
+<span class="c-keyword">### 1. PERFORMANCE ASSINTÓTICA MAPEADA E CONSOLIDADA:</span>
+• <span class="c-type">Enqueue (Inserção na Cauda da Horda):</span> Tempo constante <span class="c-number">O(1)</span> garantido de forma estrita pela manutenção e atualização contínua do ponteiro de controle de cauda global (\`f->fim\`).
+• <span class="c-type">Dequeue (Remoção na Cabeça da Horda):</span> Tempo constante <span class="c-number">O(1)</span> obtido através do avanço direto e imediato da referência lógica de início (\`f->inicio\`), liberando os nós órfãos de forma manual.
+• <span class="c-type">Uso de Heap Dinâmico:</span> Alocação sob demanda via chamadas controladas de \`malloc()\`, eliminando por completo a rigidez e os desperdícios de arrays contíguos estáticos.
+
+<span class="c-keyword">### 2. ARQUITETURA MODULAR E DECOUPLED:</span>
+O ecossistema divide as responsabilidades funcionais em arquivos estanques de extensão \`.h\` e \`.c\`, garantindo acoplamento fraco e coesão máxima. O arquivo \`main.c\` atua apenas como ponto de ignição, transferindo a pilha para o motor central presente no módulo \`game.c\`.
+
+<span class="c-keyword">### 3. DIRETIVAS DO PRÉ-PROCESSADOR E COMPILAÇÃO CONDICIONAL:</span>
+O módulo visual implementa portabilidade cross-platform interceptando a compilação por macros (\`#ifdef _WIN32\`), garantindo refresh estável do buffer de texto tanto em terminais Windows CMD quanto em ambientes POSIX Compliant.`
             }
         };
 
